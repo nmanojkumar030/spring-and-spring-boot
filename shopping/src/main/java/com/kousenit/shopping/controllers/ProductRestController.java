@@ -64,8 +64,7 @@ public class ProductRestController {
         log.info("POST /api/v1/products - Creating product with SKU: {}", request.sku());
         ProductResponse product = productService.createProduct(request);
         
-        URI location = ServletUriComponentsBuilder
-            .fromCurrentRequest()
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
             .path("/{id}")
             .buildAndExpand(product.id())
             .toUri();
