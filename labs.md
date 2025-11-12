@@ -4,12 +4,12 @@ This document contains hands-on exercises for learning Spring Boot fundamentals,
 
 ## Prerequisites
 
-- **Java 17 or later** (Spring Boot 3.x requires Java 17+)
+- **Java 21** (standardized across all projects)
 - **Spring Boot 3.5.3** (current version)
 - IDE with Spring Boot support (IntelliJ IDEA, Spring Tool Suite, or VS Code)
 
 > [!IMPORTANT]
-> These labs are designed for Spring Boot 3.5.3, which requires Java 17 or later. All code examples use modern Java features including records, text blocks, pattern matching, and enhanced switch expressions.
+> These labs are designed for Spring Boot 3.5.3 with Java 21. All code examples use modern Java features including records, text blocks, pattern matching, and enhanced switch expressions.
 
 ## Table of Contents
 
@@ -215,11 +215,27 @@ public class HelloControllerMockMVCTest {
 1. Add another class to the `com.kousenit.demo.controllers` package called `HelloRestController`. This controller will be used to model a RESTful web service, though at this stage it will be limited to HTTP GET requests (for reasons explained below).
 2. Add the `@RestController` annotation to the class.
 3. By default, REST controllers will serialize and deserialize Java classes into JSON data using the Jackson 2 JSON library, which is currently on the classpath by default. To have an object (other than a trivial `String`) to serialize, add a class called `Greeting` to the `com.kousenit.demo.json` package. In a larger application, this would represent a domain class that you can store in a database or other persistent storage mechanism.
-4. In the `Greeting` class, add a private attribute of type `String` called `message`.
-5. Add a `getMessage` method for the `greeting` attribute that returns the current message.
-6. Add a constructor to `Greeting` that takes a `String` argument and saves it to the attribute.
-7. Add a default constructor that does nothing. This constructor will be used by the JSON parser to convert a JSON response into an instance of `Greeting`.
-8. Add an `equals` method, a `hashCode` method, and a `toString` method in the usual manner. A reasonable version would be:
+4. Create the `Greeting` class as a **record** (the modern Java approach):
+
+```java
+package com.kousenit.demo.json;
+
+public record Greeting(String message) { }
+```
+
+> [!NOTE]
+> This single-line record automatically provides:
+> - Constructor: `new Greeting(String message)`
+> - Accessor: `greeting.message()`
+> - `equals()`, `hashCode()`, and `toString()` methods
+> - Immutability (all fields are final)
+>
+> Records are perfect for DTOs (Data Transfer Objects) and eliminate ~40 lines of boilerplate!
+
+**For reference** - Traditional class approach (not recommended):
+
+<details>
+<summary>Click to see the old verbose approach</summary>
 
 ```java
 package com.kousenit.demo.json;
@@ -258,12 +274,13 @@ public class Greeting {
     }
 }
 ```
+</details>
 
-9. Back in the `HelloRestController`, add a method called `greet` that takes a `String` called `name` as an argument and returns a `Greeting`.
-10. Annotate the `greet` method with a `@GetMapping` whose argument is `"/rest"`, which means that the URL to access the method will be http://localhost:8080/rest .
-11. Add the `@RequestParam` annotation to the argument, with the properties `required` set to `false` and `defaultValue` set to `World`.
-12. In the body of the method, return a new instance of `Greeting` whose constructor argument should be `"Hello, " + name + "!"`.
-13. The full class looks like (note that the string concatenation has been replaced with a `String.format` method)
+5. Back in the `HelloRestController`, add a method called `greet` that takes a `String` called `name` as an argument and returns a `Greeting`.
+6. Annotate the `greet` method with a `@GetMapping` whose argument is `"/rest"`, which means that the URL to access the method will be http://localhost:8080/rest .
+7. Add the `@RequestParam` annotation to the argument, with the properties `required` set to `false` and `defaultValue` set to `World`.
+8. In the body of the method, return a new instance of `Greeting` whose constructor argument should be `"Hello, " + name + "!"`.
+9. The full class looks like (note that the string concatenation uses modern `String.formatted()` method)
 
 ```java
 package com.kousenit.demo.controllers;
@@ -279,16 +296,19 @@ public class HelloRestController {
     @GetMapping("/rest")
     public Greeting greet(@RequestParam(required = false,
             defaultValue = "World") String name) {
-        return new Greeting(String.format("Hello, %s!", name));
+        return new Greeting("Hello, %s!".formatted(name));
     }
 }
 ```
 
-14. You can now run the application and check the behavior using either `curl` or a similar command-line tool, or simply accessing the URL in a browser, either with or without a name.
-15. To create a test for the REST controller, we will use the `TestRestTemplate` class, because we included the `web` dependency rather than `webflux` which we'll use in the next exercise. Add a class called `HelloRestControllerIntegrationTest` in the `src/test/java` tree in the same package as the REST controller class.
-16. This time, when adding the `@SpringBootTest` annotation, add the argument `webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT`. This will autoconfigure several properties of the test, including making a `TestRestTemplate` available to inject.
-17. Add two tests, one for greetings without a name and one for greetings with a name.
-18. The tests should look like:
+> [!TIP]
+> Modern Java's `String.formatted()` is cleaner than `String.format()`. Both work, but `formatted()` reads better as a method chain.
+
+10. You can now run the application and check the behavior using either `curl` or a similar command-line tool, or simply accessing the URL in a browser, either with or without a name.
+11. To create a test for the REST controller, we will use the `TestRestTemplate` class, because we included the `web` dependency rather than `webflux` which we'll use in the next exercise. Add a class called `HelloRestControllerIntegrationTest` in the `src/test/java` tree in the same package as the REST controller class.
+12. This time, when adding the `@SpringBootTest` annotation, add the argument `webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT`. This will autoconfigure several properties of the test, including making a `TestRestTemplate` available to inject.
+13. Add two tests, one for greetings without a name and one for greetings with a name.
+14. The tests should look like:
 
 ```java
 @Test
@@ -309,9 +329,9 @@ public void greetWithoutName(@Autowired TestRestTemplate template) {
 }
 ```
 
-19. One test uses the `getForEntity` method of the template, which returns a `ResponseEntity<Greeting>`. The response entity gives access to the headers, so the two provided asserts check the status code and the media type of the response. The actual response is inside the body. By calling `getBody`, the response is returned as a de-serialized `Greeting` instance, which allows you to check its message.
-20. The other test uses the `getForObject` method, which returns the de-serialized response directly. This is simpler, but does not allow access to the headers. You can use either approach in your code.
-21. The tests should now pass. This application only checks HTTP GET requests, because the application doesn't have any way to save `Greeting` instances. Once that is added, you could include analogous POST, PUT, and DELETE operations.
+15. One test uses the `getForEntity` method of the template, which returns a `ResponseEntity<Greeting>`. The response entity gives access to the headers, so the two provided asserts check the status code and the media type of the response. The actual response is inside the body. By calling `getBody`, the response is returned as a de-serialized `Greeting` instance, which allows you to check its message.
+16. The other test uses the `getForObject` method, which returns the de-serialized response directly. This is simpler, but does not allow access to the headers. You can use either approach in your code.
+17. The tests should now pass. This application only checks HTTP GET requests, because the application doesn't have any way to save `Greeting` instances. Once that is added, you could include analogous POST, PUT, and DELETE operations.
 
 ## Building a REST client
 
@@ -363,9 +383,9 @@ This exercise uses both the modern `RestClient` class for synchronous access and
 }
 ```
 
-9. Each of the two JSON objects needs to be mapped to a class. Create classes `Assignment` and `AstroResponse` in the `com.kousenit.restclient.json` package. 
+9. Each of the two JSON objects needs to be mapped to a class. Create classes `Assignment` and `AstroResponse` in the `com.kousenit.restclient.json` package.
 
-10. Using records (available in Java 17+), create these classes:
+10. Using **records** (the modern Java approach for immutable data classes), create these classes:
 
    ```java
    public record Assignment(String name, String craft) {
@@ -375,7 +395,10 @@ This exercise uses both the modern `RestClient` class for synchronous access and
    }
    ```
 
-11. Alternatively, if you prefer traditional classes, you can create these instead (though records are recommended for simple data classes):
+   > [!NOTE]
+   > Records automatically provide constructors, getters, `equals()`, `hashCode()`, and `toString()` methods. This replaces 40+ lines of boilerplate code with just 2 lines!
+
+11. **For reference only** - Traditional class approach (not recommended for new code):
 
 ```java
 public class Assignment {

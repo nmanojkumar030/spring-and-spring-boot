@@ -5,8 +5,8 @@ This file contains common commands and patterns for working with the Spring Boot
 ## Project Information
 
 - **Spring Boot Version**: 3.5.3
-- **Java Version**: 17+ (required)
-- **Gradle Version**: 8.14.2
+- **Java Version**: 21 (standardized across all projects)
+- **Gradle Version**: 9.1.0
 - **Package Structure**: `com.kousenit.*`
 
 ## Project Structure

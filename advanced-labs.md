@@ -2,9 +2,9 @@
 
 ## Prerequisites
 
-- **Java 17+** (required for Spring Boot 3.5.3)
+- **Java 21** (standardized across all projects)
 - **Spring Boot 3.5.3**
-- **Gradle 8.14.2**
+- **Gradle 9.1.0**
 - **IDE** with Spring Boot support (IntelliJ IDEA, VS Code, or Eclipse)
 - **Basic Spring Boot knowledge** (complete basic labs first)
 
@@ -73,9 +73,8 @@ plugins {
 group = 'com.kousenit'
 version = '0.0.1-SNAPSHOT'
 
-java {
-    sourceCompatibility = '17'
-}
+// Java toolchain is inherited from root build.gradle (Java 21)
+// No need to specify sourceCompatibility here
 
 configurations {
     compileOnly {
@@ -91,22 +90,25 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    
+
     runtimeOnly 'com.h2database:h2'
-    
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:h2'
+    testImplementation 'org.testcontainers:postgresql'  // PostgreSQL for more realistic testing
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
 ```
+
+> [!NOTE]
+> The root `build.gradle` configures Java 21 for all subprojects via the toolchain mechanism. Individual projects don't need to specify `sourceCompatibility`.
 
 ### Initial application.yml
 
@@ -140,7 +142,15 @@ server:
 
 ## Lab 1: Create the Product Entity (POJO)
 
-**Objective**: Create a basic Product entity class that will serve as our domain model. We'll start with essential fields and build upon this foundation in later labs.
+**Objective**: Create a Product entity class that will serve as our domain model. This lab shows the basic structure, but note that the actual solution includes validation annotations that we'll formally introduce in Lab 4.
+
+> [!NOTE]
+> **Learning Approach**: This lab shows a simplified starting point. The actual `Product.java` in the solution already includes:
+> - Validation annotations from Lab 4 (`@NotBlank`, `@Size`, `@Email`, `@Pattern`)
+> - Database indexes for performance
+> - Complete business logic methods
+>
+> This is intentional - it shows you the **final production-ready state** while the labs teach you **how to build it progressively**.
 
 **Why POJO and not Record**: We're using JPA, which requires mutable objects with default constructors and setters. Records are immutable and better suited for DTOs or value objects.
 
@@ -154,6 +164,8 @@ server:
 ### Step 1.1: Create the Basic Product Class
 
 Create `src/main/java/com/kousenit/shopping/entities/Product.java`:
+
+**Simplified version for learning** (we'll add validation in Lab 4):
 
 ```java
 package com.kousenit.shopping.entities;
@@ -229,6 +241,15 @@ public class Product {
     }
 }
 ```
+
+> [!TIP]
+> **Want to see the production-ready version?** The actual `Product.java` in the codebase includes:
+> - `@Table` with indexes: `@Index(name = "idx_product_sku", columnList = "sku", unique = true)`
+> - Validation annotations: `@NotBlank`, `@Size(min=3, max=100)`, `@Email`, `@Pattern(regexp="^[A-Z]{3}-[0-9]{6}$")`
+> - Enhanced `decrementStock()` and `incrementStock()` methods
+> - All fields properly annotated for production use
+>
+> We'll add these enhancements step-by-step in Labs 2-4, but you can reference the solution code at any time!
 
 ### Step 1.2: Create a Basic Test
 

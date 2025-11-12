@@ -49,7 +49,7 @@ Kousen IT, Inc.
 
 <v-clicks>
 
-- **Java**: Version 17 or higher (Spring Boot 3.x requirement)
+- **Java**: Version 21 (standardized across all projects)
 - **Build Tools**: Gradle or Maven familiarity
 - **IDE**: IntelliJ IDEA, VS Code, or Eclipse with Spring support
 - **Basic Knowledge**:
@@ -1389,7 +1389,7 @@ layout: section
 
 <v-clicks>
 
-- **Java 17+ Baseline**: Modern Java features (records, text blocks, pattern matching)
+- **Java 21 Baseline**: Modern Java features (records, text blocks, pattern matching, virtual threads)
 - **Jakarta EE 9+**: Package namespace change from `javax.*` to `jakarta.*`
 - **Native Compilation**: GraalVM native image support
 - **Observability**: Micrometer observation API
